@@ -2,8 +2,9 @@
 var should = chai.should();
 var public1 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuXkhM6ZRBZiJKRakoh3fecYynMMfIqK5+bZtWUkav+GAWpgqJOFCvg/f5TRb9K7MPzHYYmHfYot+o0HVQgSsyssiDH6oouFawLdXaOPAfvmoeolLTHTLdMarb0f2hDML2ichCIJTQ2YsiYNS7cG03WgvLnV563WjMHPrUGZwrleC638YQNSw0A4bnQy81R5n2EJBAVtatuuUa8vaQv4qoO9qjYnF9LKKCla/i3QhFlMM+6GKZfmpfoZJ7eqbhZS7Itzz8Oi8rbUQzyFB/xSMg5f8D9imQVBJZq3sl34AvDMHrojnyQgIIqlAjr3LxKxnWm/yxCa4Z5ZdTkVYgAM4WwIDAQAB"
 
-// Seed need to be the same in order to test decryption
-var seed = new Uint8Array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+// Key need to be the same in order to test decryption
+var shiftAmount = window.Crypto.generateAsymmetricKey();
+
 
 var bytes = new Uint8Array(1024);
 describe("#SupportedBrowser: ",function(){
