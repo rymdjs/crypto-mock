@@ -101,23 +101,17 @@ describe("#ResourceEncryption: ",function(){
   it("Text should be encrypted: ", function(){
     console.log('hit2');
 
-    window.Crypto.importKey(window.Crypto.Base64.parse(public1)).then(
+    testString = 'Testing text encryption';
 
-      function(key){
-        console.log('hit3');
+    console.log(testString);
 
-        window.Crypto.encryptText(key,'Testing text encryption',seed).then(
+    var encryptedString = window.Crypto.encryptText(shiftAmount,testString);
+    console.log("Encrypted string: " + encryptedString);
+    encryptedString.should.not.be.equal(testString);
 
-          function(encryptedString) {
-
-            console.log('hit4');
-
-            encryptedString.should.be.a('String');
-          
-          }
-        );
-      }
-    );
+    var decryptedString = window.Crypto.decryptText(shiftAmount,encryptedString);
+    console.log("Decrypted string: " + decryptedString);
+    decryptedString.should.be.equals(testString);
 
   })
 
