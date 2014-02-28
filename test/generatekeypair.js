@@ -98,7 +98,7 @@ describe("#SupportedBrowser: ",function(){
 describe("#ResourceEncryption: ",function(){
   console.log('hit1');
 
-  it("Text should be encrypted: ", function(){
+  it("Text encryption and decryption: ", function(){
     console.log('hit2');
 
     testString = 'Testing text encryption';
@@ -112,6 +112,29 @@ describe("#ResourceEncryption: ",function(){
     var decryptedString = window.Crypto.decryptText(shiftAmount,encryptedString);
     console.log("Decrypted string: " + decryptedString);
     decryptedString.should.be.equals(testString);
+
+  }),
+
+  it("Blob encryption and decryption: ", function(){
+    console.log('hit4');
+
+    var reader = new FileReader();
+
+    var testFileParts = ['<a id="a"><b id="b">hey!</b></a>'];
+    var testBlob = new Blob(testFileParts, {type : 'text/html'}); // the blob
+    var testBlobAB = reader.readAsArrayBuffer(testBlob)
+
+    console.log("testBlobAB: " + testBlobAB);
+    console.log("testBlob: " + testBlob);
+
+    var encryptedTestBlob = window.Crypto.encryptBlob(shiftAmount,testBlob);
+    console.log("Enc.TestBlob: " + encryptedTestBlob);
+    var encryptedTestBlobAB = reader.readAsArrayBuffer(encryptedTestBlob);
+    encryptedTestBlobAB.should.not.be.equal(testBlob);
+
+    var decryptedTestBlob = window.Crypto.decryptBlob(shiftAmount,encryptedTestBlob);
+    var decryptedTestBlobAB = reader.readAsArrayBuffer(decryptedTestBlob);
+    decryptedTestBlob.should.be.equals(testBlob);
 
   })
 
