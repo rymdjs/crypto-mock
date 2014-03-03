@@ -1,7 +1,11 @@
 ;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (){
-var rsa = require('bignumber-jt');
 
+//dependecies  
+var rsa = require('bignumber-jt');
+var BigInteger = require('bignumber-jt');
+
+//general Ansitags to bee used when parsing To RSAkeys 
 var ANS1_TAG_SEQUENCE     = 48;
 var ANS1_TAG_OBJECT       = 6;
 var ANS1_TAG_INTEGER      = 2;
@@ -9,45 +13,41 @@ var ANS1_TAG_NULL         = 5;
 var ANS1_TAG_OCTETSTRING  = 4;
 var ANS1_TAG_BIT_STRING   = 3;
 
-var BigInteger = require('bignumber-jt');
 
-
-var RSA = {
+var Utils = {
 //Will return a promise containing the keys to be imported
-_generateRSAKeypair: function(bitlenght){
-var key = new rsa.Key();
-key.generate(bitlenght, "10001");
+_generateRSAKeypair: function(bitlength){
+  var key = new rsa.Key();
+  key.generate(bitlength, '10001');
+  var keyPair = {privateKey:null,publicKey:null};
+  return Q.fcall(
+    function(){
+      keyPair.privateKey = Utils._encodeToPsck8(key.n,key.e,key.d,key.p,key.q,key.dmp1,key.dmq1,key.coeff)
+      return keyPair;
+    }).then(
+    function(keypair){
+      keyPair.publicKey = Utils._encodeToSpki(key.n,key.e);
+      return keyPair
+    });
 
-var keyPair = {privateKey:null,publicKey:null};
-
-return Q.fcall(
-function(){
-keyPair.privateKey = RSA._encodeToPsck8(key.n,key.e,key.d,key.p,key.q,key.dmp1,key.dmq1,key.coeff)
-return keyPair;
-}).then(
-function(keypair){
-keyPair.publicKey = RSA._encodeToSpki(key.n,key.e);
-return keyPair
-});
-
-},
+  },
 
 
 //Converts Uint8Array to and from base64 
 _uint8ArrayToString: function (a) {
-return btoa(String.fromCharCode.apply(0, a));
+  return btoa(String.fromCharCode.apply(0, a));
 },
 
 
 _base64ToUint8Array: function (s) {
-s = s.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, '');
-return new Uint8Array(Array.prototype.map.call(atob(s), function (c) { return c.charCodeAt(0) }));
+  s = s.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, '');
+  return new Uint8Array(Array.prototype.map.call(atob(s), function (c) { return c.charCodeAt(0) }));
 },
 
 
 //Converts Strings to and from ArrayBufferview
 _arraybufferToString: function (buf) { // very instable
-return String.fromCharCode.apply(null, new Uint16Array(buf));
+  return String.fromCharCode.apply(null, new Uint16Array(buf));
 },
 
 
@@ -55,26 +55,26 @@ _string2ArrayBuffer: function (str) { // very instable
 var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
 var bufView = new Uint16Array(buf);
 for (var i=0, strLen=str.length; i<strLen; i++) {
-bufView[i] = str.charCodeAt(i);
+  bufView[i] = str.charCodeAt(i);
 }
 return bufView;
 },
 
-//Manually parses key componetennts to Ansi1 
+//Manually parses key components to Ansi1 
 _encodeToPsck8: function(n,e,d,p,q,dmp1,dmq1,coeff){  
-var n = n.toString(16);
-var e = e.toString(16);
-var d = d.toString(16);
-var p = p.toString(16);
-var q = q.toString(16);
-var dmp1 = dmp1.toString(16);
-var dmq1 = dmq1.toString(16);
-var coeff = coeff.toString(16);
+  var n = n.toString(16);
+  var e = e.toString(16);
+  var d = d.toString(16);
+  var p = p.toString(16);
+  var q = q.toString(16);
+  var dmp1 = dmp1.toString(16);
+  var dmq1 = dmq1.toString(16);
+  var coeff = coeff.toString(16);
 
-var Ans1 = new Uint8Array(637); 
-var position = 0;
+  var Ans1 = new Uint8Array(637); 
+  var position = 0;
 
-
+//Head,Tag,length and Black magic 
 Ans1[position++] = ANS1_TAG_SEQUENCE;
 Ans1[position++] = 130
 Ans1[position++] = 2
@@ -114,14 +114,14 @@ Ans1[position++] = 129
 Ans1[position++] = 0
 
 for(var i2 = 0;  i2 < (n.length);i2+=2){
-Ans1[position++] = "0x"+ n.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ n.substring(i2,(i2+2));
 }
 
 Ans1[position++] = ANS1_TAG_INTEGER; //r
 Ans1[position++] = 3; //y
 
 for(var i2 = 0; i2 < e.length;i2+=2){
-Ans1[position++] = "0x"+  ("0"+e).substring(i2,(i2+2));
+  Ans1[position++] = '0x'+  ('0'+e).substring(i2,(i2+2));
 }
 Ans1[position++] = 2;
 Ans1[position++] = 129;
@@ -129,7 +129,7 @@ Ans1[position++] = 129;
 Ans1[position++] = 0;
 
 for(var i2 = 0;  i2 < (d.length);i2+=2){ //173
-Ans1[position++] = "0x"+ d.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ d.substring(i2,(i2+2));
 }
 Ans1[position++] = 2;
 Ans1[position++] = 65;
@@ -137,7 +137,7 @@ Ans1[position++] = 0;
 
 //304 - prime1:
 for(var i2 = 0;  i2 < (p.length);i2+=2){ //173
-Ans1[position++] = "0x"+ p.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ p.substring(i2,(i2+2));
 }
 
 Ans1[position++] = 2;
@@ -146,7 +146,7 @@ Ans1[position++] = 0;
 
 //371 - prime2:
 for(var i2 = 0;  i2 < (q.length);i2+=2){ //173
-Ans1[position++] = "0x"+ q.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ q.substring(i2,(i2+2));
 }
 
 Ans1[position++] = 2;
@@ -155,7 +155,7 @@ Ans1[position++] = 0;
 
 //438 - exponent1:
 for(var i2 = 0;  i2 < (dmp1.length);i2+=2){ //173
-Ans1[position++] = "0x"+ dmp1.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ dmp1.substring(i2,(i2+2));
 }
 
 Ans1[position++] = 2;
@@ -164,7 +164,7 @@ Ans1[position++] = 0;
 
 //505 - exponent2:
 for(var i2 = 0;  i2 < (dmq1.length);i2+=2){ //173
-Ans1[position++] = "0x"+ dmq1.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ dmq1.substring(i2,(i2+2));
 }
 
 Ans1[position++] = 2;
@@ -173,7 +173,7 @@ Ans1[position++] = 0;
 
 //572 - coefficient:
 for(var i2 = 0;  i2 < (coeff.length);i2+=2){ //173
-Ans1[position++] = "0x"+ coeff.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ coeff.substring(i2,(i2+2));
 }
 
 return Ans1;
@@ -182,16 +182,10 @@ return Ans1;
 
 _encodeToSpki: function(n,e){
 
-var n = n.toString(16);
-var e = e.toString(16);
-//
-//HEADERLENGHT
-//LENGHT
-//
-
-//20+128+-+5:57 - =
-var Ans1 = new Uint8Array(162); 
-var position = 0;
+  var n = n.toString(16);
+  var e = e.toString(16);
+  var Ans1 = new Uint8Array(162); 
+  var position = 0;
 //----
 Ans1[position++] = ANS1_TAG_SEQUENCE;
 Ans1[position++] = 129;
@@ -214,7 +208,7 @@ Ans1[position++] = 0//LENGTH;
 Ans1[position++] = ANS1_TAG_BIT_STRING;
 Ans1[position++] = 129;
 Ans1[position++] = 141;
-Ans1[position++] = 0; //unknown
+Ans1[position++] = 0; // from here on Black Magick 
 Ans1[position++] = 48;
 Ans1[position++] = 129;
 Ans1[position++] = 137;
@@ -223,84 +217,90 @@ Ans1[position++] = 129;
 Ans1[position++] = 129;
 Ans1[position++] = 0;
 
-
 for(var i2 = 0;  i2 < (n.length);i2+=2){
-Ans1[position++] = "0x"+ n.substring(i2,(i2+2));
+  Ans1[position++] = '0x'+ n.substring(i2,(i2+2));
 }
 
 Ans1[position++] = ANS1_TAG_INTEGER; //r
 Ans1[position++] = 3; //y
 
 for(var i2 = 0; i2 < e.length;i2+=2){
-Ans1[position++] = "0x"+  ("0"+e).substring(i2,(i2+2));
+  Ans1[position++] = '0x'+  ('0'+e).substring(i2,(i2+2));
 }
 
 return Ans1;
 }
 }
-module.exports = this.CryptoDevelopUtils = RSA;
+
+module.exports = this.Utils = Utils;
 })();
+
+
+
 },{"bignumber-jt":4}],2:[function(require,module,exports){
 
 (function (){
-var root = this;
-var Q = require('q');
-var utils = require("./cryptoback");
+  var root = this;
+  var Q = require('q');
+  var utils = require("./cryptoback");
 
-generationAlgorithm1 =  {
-name: "RSASSA-PKCS1-v1_5", 
-modulusLength: 2048,
-publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-hash: {
-name: "SHA-1"
-}
-};
+  var generationAlgorithm1 =  {
+    name: "RSASSA-PKCS1-v1_5", 
+    modulusLength: 2048,
+    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+    hash: {
+      name: "SHA-1"
+    }
+  };
 
-generationAlgorithm2 =  {
-name: "RSAES-PKCS1-v1_5", 
-modulusLength: 2048,
-publicExponent: new Uint8Array([0x01, 0x00, 0x01])
+  var generationAlgorithm2 =  {
+    name: "RSAES-PKCS1-v1_5", 
+    modulusLength: 2048,
+    publicExponent: new Uint8Array([0x01, 0x00, 0x01])
 
-};
-encrytpionAlgorithm = {
-name: "RSAES-PKCS1-v1_5",
-iv: window.crypto.getRandomValues(new Uint8Array(16))
-};
+  };
+  var encrytpionAlgorithm = {
+    name: "RSAES-PKCS1-v1_5",
+    iv: window.crypto.getRandomValues(new Uint8Array(16))
+  };
 
-decrytpionAlgorithm = {
-name: "RSAES-PKCS1-v1_5",
-iv: window.crypto.getRandomValues(new Uint8Array(16))
-};
+  var decrytpionAlgorithm = {
+    name: "RSAES-PKCS1-v1_5",
+    iv: window.crypto.getRandomValues(new Uint8Array(16))
+  };
 
-signAlgorithm = {
-name: "RSASSA-PKCS1-v1_5",
-hash: {
-name: "SHA-1"
-}
-};
+  var signAlgorithm = {
+    name: "RSASSA-PKCS1-v1_5",
+    hash: {
+      name: "SHA-1" //later we when supported wee will use SHA256
+    }
+  };
 
-verifyAlgorithm = {
-name: "RSASSA-PKCS1-v1_5",
-hash: {
-name: "SHA-1",
-}
-};
+  var verifyAlgorithm = {
+    name: "RSASSA-PKCS1-v1_5",
+    hash: {
+      name: "SHA-1",
+    }
+  };
 
-exportFormat= 'spki';
+  specFormats ={
+    spki:'spki',
+    pkcs8:'pkcs8'
+  };
 
-var Crypto = {  
+  var Crypto = {  
 
-settings: {
-    numArticles: null,
-    articleList: null,
-    moreButton: null
-  },
+    settings: {
+      numArticles: null,
+      articleList: null,
+      moreButton: null
+    },
 // Returns a publicKey and  a privateKey inside a Keypair.
 // i if you want to access the public key write :
 // .then(function(keypair){keypair.publicKey}) and the same for the private key
 
 generateKeyPair: function(){ 
-return utils._generateRSAKeypair(1024);
+  return utils._generateRSAKeypair(1024);
 },
 
 // will return the key as a Uint8Array
@@ -308,118 +308,115 @@ return utils._generateRSAKeypair(1024);
 // (SubjectPublicKeyinfo) -> Promise
 
 exportKey: function(generatedKey){
-// add detect if asymmetric or symmetric algoritm
-return window.crypto.subtle.exportKey(exportFormat,generatedKey).then(function(key){
-return new Uint8Array(key);
-}
-);
+  return window.crypto.subtle.exportKey(specFormats.spki,generatedKey).then(function(key){
+    return new Uint8Array(key);
+  }
+  );
 },
 // Takes a Uint8Array! and makes a key (type,SubjectPublicKeyinfo) -> Promise
 importKey: function(type,key){ 
-if (type === "private"){type = "pkcs8"}
-else if(type === "public"){type = "spki"};  
-return window.crypto.subtle.importKey(type,key,{name: "RSAES-PKCS1-v1_5"}, true, 
-["encrypt", "decrypt"]);
+  if (type === "private"){type = specFormats.pkcs8}
+    else if(type === "public"){type = specFormats.spki};  
+  return window.crypto.subtle.importKey(type,key,{name: "RSAES-PKCS1-v1_5"}, true, 
+    ["encrypt", "decrypt"]);
 },
 
 signKey: function(generatedKey,resource){
-return window.crypto.subtle.sign(signAlgorithm, generatedKey,utils._string2ArrayBuffer(resource));
+  return window.crypto.subtle.sign(signAlgorithm, generatedKey,utils._string2ArrayBuffer(resource));
 },
 
 verifyKey: function(generatedKey,resource){
-return window.crypto.subtle.verify(verifyAlgorithm, generatedKey, utils._string2ArrayBuffer(resource), utils._string2ArrayBuffer(resource));
+  return window.crypto.subtle.verify(verifyAlgorithm, generatedKey, utils._string2ArrayBuffer(resource), utils._string2ArrayBuffer(resource));
 },
 
+// Generate random integer between 1 and 10
 generateAsymmetricKey: function(){ 
-
-  // Generate random integer between 1 and 10
   return Math.floor((Math.random()*10)+1);
-
 },
 
 
 // Encrypt a text with public or private key (Key,String) -> Promise
 encryptText: function(shiftAmount,text,seed){
-   
-  // Make an output variable
-  var output = '';
- 
-  // Go through each character
-  for (var i = 0; i < text.length; i ++) {
- 
-    // Get the character we'll be appending
-    var c = text[i];
 
-    var code = text.charCodeAt(i);
-    c = String.fromCharCode(code + shiftAmount);
+// Make an output variable
+var output = '';
 
-    // Append
-    output += c;
- 
-  }
- 
-  // All done!
-  return output;
+// Go through each character
+for (var i = 0; i < text.length; i ++) {
+
+// Get the character we'll be appending
+var c = text[i];
+
+var code = text.charCodeAt(i);
+c = String.fromCharCode(code + shiftAmount);
+
+// Append
+output += c;
+
+}
+
+// All done!
+return output;
 },
 
 // Decrypt a text with public or private key  (Key,String) -> Promise
 decryptText: function(shiftAmount,text,seed){
-     
-  // Make an output variable
-  var output = '';
- 
-  // Go through each character
-  for (var i = 0; i < text.length; i ++) {
- 
-    // Get the character we'll be appending
-    var c = text[i];
 
-    var code = text.charCodeAt(i);
-    c = String.fromCharCode(code - shiftAmount);
+// Make an output variable
+var output = '';
 
-    // Append
-    output += c;
- 
-  }
- 
-  // All done!
-  return output;
+// Go through each character
+for (var i = 0; i < text.length; i ++) {
+
+// Get the character we'll be appending
+var c = text[i];
+
+var code = text.charCodeAt(i);
+c = String.fromCharCode(code - shiftAmount);
+
+// Append
+output += c;
+
+}
+
+// All done!
+return output;
 },
 // Encrypt a blob with public or private key (Key,String) -> Promise
 encryptBlob: function(shiftAmount,blob,seed){
 
   var reader = new FileReader();
-  //we read the content as array buffer so we can handle binary data 
-  //too
+//we read the content as array buffer so we can handle binary data 
+//too
 
-  reader.readAsArrayBuffer(blob);
-  reader.onloadend = function() {
-    //we interpret the arraybuffer's content as Uint8Array
-    //so we can encode each byte as utf8 char
-    //Note: with small files you could pass the 'content' array 
-    //directly to String.fromCharCode but with bigger files you'll
-    //get "Maximum call stack size exceeded" so need to handle each 
-    var content = new Uint8Array(this.result);
-    var utf8 = "";
-    for (var i = 0, len = content.length; i < len; i++) {
-        utf8 += String.fromCharCode(content[i]);
-    }
-    //at this point we encode the utf8 string to base64. you might 
-    //wonder why: I found problems after binary file decryption 
-    //if encryption was performed on utf8 string directly
-    var b64 = btoa(utf8);
+reader.readAsArrayBuffer(blob);
+reader.onloadend = function() {
+//we interpret the arraybuffer's content as Uint8Array
+//so we can encode each byte as utf8 char
+//Note: with small files you could pass the 'content' array 
+//directly to String.fromCharCode but with bigger files you'll
+//get "Maximum call stack size exceeded" so need to handle each 
+var content = new Uint8Array(this.result);
+var utf8 = "";
+for (var i = 0, len = content.length; i < len; i++) {
+  utf8 += String.fromCharCode(content[i]);
+}
+//at this point we encode the utf8 string to base64. you might 
+//wonder why: I found problems after binary file decryption 
+//if encryption was performed on utf8 string directly
+var b64 = btoa(utf8);
 
-    //we finally encrypt it 
-    var encrypted = window.Crypto.encryptText(shiftAmount, b64);
-    var blob = new Blob([encrypted], {
-        type: 'application/octet-stream'
-    });
+//we finally encrypt it 
+var encrypted = window.Crypto.encryptText(shiftAmount, b64);
+var blob = new Blob([encrypted], {
+  type: 'application/octet-stream'
+});
 
-    console
+console
 
-    //and return a new encrypted blob
-    return blob;
-  };
+//and return a new encrypted blob
+return blob;
+};
 },
 
 
@@ -428,37 +425,36 @@ decryptBlob: function(key,blob,seed){
 
   var reader = new FileReader();
 
-  //we read the content as array buffer so we can handle binary data 
-  //too
-  reader.readAsArrayBuffer(blob);
+//we read the content as array buffer so we can handle binary data 
+//too
+reader.readAsArrayBuffer(blob);
 
-  reader.onloadend = function() {
-    //we interpret the arraybuffer's content as Uint8Array
-    //so we can encode each byte as utf8 char
-    //Note: with small files you could pass the 'content' array 
-    //directly to String.fromCharCode but with bigger files you'll
-    //get "Maximum call stack size exceeded" so need to handle each 
-    var content = new Uint8Array(this.result);
-    var utf8 = "";
-    for (var i = 0, len = content.length; i < len; i++) {
-        utf8 += String.fromCharCode(content[i]);
-    }
-    //at this point we encode the utf8 string to base64. you might 
-    //wonder why: I found problems after binary file decryption 
-    //if encryption was performed on utf8 string directly
-    var b64 = btoa(utf8);
-
-    //we finally encrypt it 
-    var decrypted = window.Crypto.encryptText(shiftAmount, b64);
-    var blob = new Blob([decrypted], {
-        type: 'application/octet-stream'
-    });
-
-    //and return a new decrypted blob
-    return blob;
-  }
+reader.onloadend = function() {
+//we interpret the arraybuffer's content as Uint8Array
+//so we can encode each byte as utf8 char
+//Note: with small files you could pass the 'content' array 
+//directly to String.fromCharCode but with bigger files you'll
+//get "Maximum call stack size exceeded" so need to handle each 
+var content = new Uint8Array(this.result);
+var utf8 = "";
+for (var i = 0, len = content.length; i < len; i++) {
+  utf8 += String.fromCharCode(content[i]);
 }
+//at this point we encode the utf8 string to base64. you might 
+//wonder why: I found problems after binary file decryption 
+//if encryption was performed on utf8 string directly
+var b64 = btoa(utf8);
 
+//we finally encrypt it 
+var decrypted = window.Crypto.encryptText(shiftAmount, b64);
+var blob = new Blob([decrypted], {
+  type: 'application/octet-stream'
+});
+
+//and return a new decrypted blob
+return blob;
+}
+}
 };
 module.exports = this.Crypto = Crypto;
 })();

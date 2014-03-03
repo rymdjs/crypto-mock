@@ -2,15 +2,6 @@
 var should = chai.should();
 var public1 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuXkhM6ZRBZiJKRakoh3fecYynMMfIqK5+bZtWUkav+GAWpgqJOFCvg/f5TRb9K7MPzHYYmHfYot+o0HVQgSsyssiDH6oouFawLdXaOPAfvmoeolLTHTLdMarb0f2hDML2ichCIJTQ2YsiYNS7cG03WgvLnV563WjMHPrUGZwrleC638YQNSw0A4bnQy81R5n2EJBAVtatuuUa8vaQv4qoO9qjYnF9LKKCla/i3QhFlMM+6GKZfmpfoZJ7eqbhZS7Itzz8Oi8rbUQzyFB/xSMg5f8D9imQVBJZq3sl34AvDMHrojnyQgIIqlAjr3LxKxnWm/yxCa4Z5ZdTkVYgAM4WwIDAQAB"
 var bytes = new Uint8Array(1024);
-describe("#SupportedBrowser: ",function(){
-  it("Browserversion up to date",function(){
-    (window.navigator.appVersion.match(/Chrome\/(.*?) /)[1])
-    .should.equal("34.0.1848.0");
-
-  })
-});
-
-
 
 describe("#Keygenerating: ",function(){
   it("Chrome: should generate publicKey: ",function(){
@@ -92,10 +83,7 @@ describe("#Keyconverting: ",function(){
   })
 });
 describe("#Encryption: ",function(){
-
 });
-
-
 
 describe("#Decryption: ",function(){
 
